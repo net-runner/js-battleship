@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="https://fonts.googleapis.com/css?family=Black+Han+Sans|Righteous" rel="stylesheet">
+    <link href="css.css" rel="stylesheet">
+    <title>STATKI</title>
+</head>
+
+<body>
+
+
+</body>
+<script>
+    //Windows (Ctrl+K Ctrl+0) in Mac (Cmd+K Cmd+0) FOLD ALL
+    console.log("READY")
+    //OBJEKT STATKI ?_?
+    var Statki = {
+        init: function (wielkosc) {
+            map = wielkosc - 2
+            this.genHtml()
+            var gracz = this.genTab(wielkosc)
+            var komputer = this.genTab(wielkosc)
+            this.statkiGracza()
+            this.listenery()
+            return [gracz, komputer]
+        },
+        maszty: [4, 3, 3, 2, 2, 2, 1, 1, 1, 1],
+        dbM: this.maszty,
+        lock: [],
+        botDb: [],
+        isPlayerRound: true,
+        isZacheta: false,
+        enableCheats: false,
+        zmiennasmierci: 1,
+        Player_score: 0,
+        Computer_score: 0,
+        computer_turns: 0,
+        won: 0,
+        lost: 0,
+        difficulty: 3,
+        genTab: function (wielkosc) {
+            tab = []
+            for (let i = 0; i < wielkosc; i++) {
+                tab[i] = []
+                for (let x = 0; x < wielkosc; x++) {
+                    tab[i][x] = 0
+                }
+            }
+            return tab
+        },
+        statkiGracza: function () {
+            var statki = document.getElementById("statki")
+            for (maszt in this.maszty) {
+                let table = document.createElement("table")
+                let tr = document.createElement("tr")
+                for (x = 1; x <= this.maszty[maszt]; x++) {
+                    let td = document.createElement('td')
+                    tr.appendChild(td)
+                }
+                table.appendChild(tr)
+                if (maszt == 0) {
+                    table.style.backgroundColor = ('blue')
+                    table.classList.add('blue')
+                }
+                this.lock[maszt] = table
+                table.classList.add(this.maszty[maszt])
+                statki.appendChild(table)
+            }
+        },
+        __keydown: function (e) {
+            if (e.keyCode == 82) {
+                Statki.rollComputer()
+            }
+            if (e.keyCode == 83) {
+                if (Statki.enableCheats) {
+                    Statki.showComputer()
+                }
+            }
+        },
+        __mouseover: function () {
+            this.style.backgroundColor = 'orange'
+        },
+        __mouseout: function () {
+            this.style.backgroundColor = ''
+        },
+        __mouseouttab: function () {
+            var dzieci = document.getElementsByClassName('omegalol')
+            for (let i = 0; i < dzieci.length; i++) {
+                dzieci[i].classList.remove('green')
+                dzieci[i].classList.remove('red')
+            }
+        },
+        __contextmenu: function (e) {
+            e.preventDefault()
+            if (Statki.zmiennasmierci == 0) {
+                Statki.zmiennasmierci = 1
+            }
+            else {
+                Statki.zmiennasmierci = 0
+            }
+            Statki.__mouseouttab()
+            Statki.__mouseovertab(e)
+        },
+        omegalol: function () {
+            let tablicaP = document.getElementById("playertab")
+            var dzieciaczki = tablicaP.getElementsByTagName('td')
+            for (let i = 0; i < dzieciaczki.length; i++) {
+                dzieciaczki[i].classList.add("omegalol")
+            }
+        },
+        clearTabs: function () {
+            var dzieciaczki = document.getElementsByTagName('td')
+            for (let i = 0; i < dzieciaczki.length; i++) {
+                dzieciaczki[i].classList = ''
+            }
+        },
+        regame: function () {
+            var dvb = document.getElementById('dvb')
+            let tablicaP = document.getElementById("playertab")
+            tablice = [Statki.genTab(12), tablice[1]]
+            let divstatki = document.getElementById("statki")
+            b2 = document.getElementById("b2")
+            b2.style.display = "none"
+            dvb.style.display = "block"
+            b2.removeEventListener("click", Statki.regame, true)
+            divstatki.style.display = 'block'
+            tablicaP.style.float = "right"
+            Statki.statkiGracza()
+            Statki.clearTabs()
+            Statki.listenery()
+            Statki.omegalol()
+            Statki.computer_turns = 0
+            Statki.Computer_score = 0
+            Statki.Player_score = 0
+        },
+        endGame: function (wol) {
+            var scv = document.getElementById("sb")
+            scv.innerHTML = "<p>" + Statki.won + " : " + Statki.lost + "</p>"
+            b2 = document.getElementById("b2")
+            b2.style.display = "block"
+            b2.addEventListener("click", Statki.regame, true)
+            let tablicaP = document.getElementById("playertab")
+            let tablicaC = document.getElementById("computertab")
+            tablicaP.removeEventListener('click', Statki.__playertabklik, true)
+            tablicaC.removeEventListener('click', Statki.__playermove, true)
+            Statki.isPlayerRound = true
+            let alertbackground = document.createElement("div")
+            alertbackground.setAttribute("id", "alert")
+            let alertinner = document.createElement("div")
+            alertinner.setAttribute("id", "inneralert")
+            if (wol) {
+                alertinner.innerHTML = "<p style='color:green;font-size:4vw;'>Zwycięstwo!</p><p style='font-size:1.8vw;'>Wygrywasz z " + Statki.bots[Statki.difficulty] + " w " + (Statki.computer_turns + 1) + " turach!</p>"
+            }
+            else {
+                alertinner.innerHTML = "<p style='color:red;font-size:4vw;'>Porażka!</p><p style='font-size:1.8vw;'>Przegrywasz z " + Statki.bots[Statki.difficulty] + " w " + Statki.computer_turns + " turach!</p>"
+            }
+            let bok = document.createElement("button")
+            alertinner.appendChild(bok)
+            bok.classList.add("b")
+            bok.innerText = "OK"
+            document.body.appendChild(alertbackground)
+            document.body.appendChild(alertinner)
+            bok.addEventListener("click", function () {
+                bok.remove()
+                alertinner.remove()
+                alertbackground.remove()
+            })
+        },
+        randomShoot: function () {
+            var losowaX = 1 + Math.floor(Math.random() * 10)
+            var losowaY = 1 + Math.floor(Math.random() * 10)
+            var losowaXX = losowaX + 10
+            var losowaYY = losowaY + 10
+            var tabletarget = document.getElementById("p" + losowaXX + "." + losowaYY)
+            if (tabletarget.classList == 'red' || tabletarget.classList == 'gray') {
+                Statki.randomShoot()
+            }
+            else {
+                if (tablice[0][losowaX][losowaY] == 1) {
+                    tabletarget.classList = ''
+                    tabletarget.classList.add('red')
+                    Statki.Computer_score++
+                    Statki.fleetCheck()
+                    if (Statki.Computer_score == 20) {
+                        Statki.isPlayerRound = true
+                    }
+                    if (!Statki.isZacheta) {
+                        Statki.isPlayerRound = true
+                    } else {
+                        Statki.Computermove()
+                    }
+                }
+                if (tablice[0][losowaX][losowaY] == 0) {
+                    tabletarget.classList = ''
+                    tabletarget.classList.add('gray')
+                    Statki.isPlayerRound = true
+                }
+            }
+        },
+        expertShoot: function () {
+            if (Statki.botDb.length == 0) {
+                var x = 1 + Math.floor(Math.random() * 10)
+                var y = 1 + Math.floor(Math.random() * 10)
+                xx = x + 10
+                yy = y + 10
+                var tabletarget = document.getElementById("p" + xx + "." + yy)
+                if (tabletarget.classList == 'red' || tabletarget.classList == 'gray') {
+                    Statki.randomShoot()
+                }
+                else {
+                    if (tablice[0][x][y] == 1) {
+                        tabletarget.classList = ""
+                        tabletarget.classList.add("red")
+                        Statki.Computer_score++
+                        Statki.fleetCheck()
+                        if (Statki.Computer_score == 20) {
+                            Statki.isPlayerRound = true
+                        }
+                        var statek = {
+                            "segment": { "x": x, "y": y }, "isVertical": undefined,
+                            "length": undefined
+                        }
+                        Statki.botDb[0] = statek;
+                        if (!Statki.isZacheta) {
+                            Statki.isPlayerRound = true
+                        } else {
+                            Statki.Computermove()
+                        }
+                    }
+                    if (tablice[0][x][y] == 0) {
+                        tabletarget.classList = ""
+                        tabletarget.classList.add("gray")
+                        Statki.isPlayerRound = true
+                    }
+                    if (tablice[0][x][y] == 2) {
+                        this.expertShoot()
+                    }
+                }
+            }
+            else {
+                Statki.dobij()
+            }
+
+        },
+        legendShoot: function () {
+
+        },
+        godShoot: function () {
+            var x = 1 + Math.floor(Math.random() * 10)
+            var y = 1 + Math.floor(Math.random() * 10)
+            if (tablice[0][x][y] == 1) {
+                var xx = x + 10
+                var yy = y + 10
+                var tabletarget = document.getElementById("p" + xx + "." + yy)
+                if (tabletarget.classList == 'red') {
+                    Statki.godShoot()
+                } else {
+                    tabletarget.classList = ''
+                    tabletarget.classList.add('red')
+                    Statki.Computer_score++
+                    Statki.fleetCheck()
+                    if (!Statki.isZacheta) {
+                        Statki.isPlayerRound = true
+                    } else {
+                        Statki.Computermove()
+                    }
+                }
+            } else {
+                Statki.godShoot()
+            }
+        },
+        dobij: function () {
+          var x = this.botDb[0].segment.x
+          var y = this.botDb[0].segment.y
+          var kierunek = Math.round(Math.random())
+          if(this.botDb[0].isVertical==undefined){
+            if(kierunek==0){
+
+            }
+          }else{
+
+          }
+        },
+        mark_useless: function () {
+            var czekin = this.botDb.length + 2
+            var x = this.botDb[0].segment.x
+            var y = this.botDb[0].segment.y
+            if (this.botDb.isVertical == false || this.botDb.isVertical == undefined) {
+                for (var i = 1; i <= 3; i++) {
+                    for (var j = 1; j <= czekin; j++) {
+                        P = y + i - 2
+                        S = x + j - 2
+                        tablice[0][S][P] == "2"
+                    }
+                }
+            } else {
+                for (var i = 1; i <= czekin; i++) {
+                    for (var j = 1; j <= 3; j++) {
+                        P = y + i - 2
+                        S = x + j - 2
+                        tablice[0][S][P] == "2"
+                    }
+                }
+            }
+        },
+        show_useless: function () {
+            for (let i = 1; i <= tablice[0].length - 2; i++) {
+                for (let x = 1; x <= tablice[0].length - 2; x++) {
+                    var xx = x + 10
+                    var yy = i + 10
+                    if (tablice[0][i][x] == 1) { let check = document.getElementById("c" + yy + "." + xx); if (check.classList == "") { check.style.backgroundColor = 'orange' } } else { continue }
+                }
+            }
+        },
+        Computermove: function () {
+            if (Statki.isPlayerRound == false) {
+                if (Statki.difficulty == 3) {
+                    setTimeout(Statki.randomShoot, 1000)
+                }
+                if (Statki.difficulty == 2) {
+                    setTimeout(Statki.expertShoot, 1000)
+                }
+                if (Statki.difficulty == 1) {
+                    setTimeout(Statki.legendShoot, 1000)
+                }
+                if (Statki.difficulty == 0) {
+                    setTimeout(Statki.godShoot, 1000)
+                }
+            }
+        },
+        fleetCheck: function () {
+            if (Statki.Computer_score == 20) {
+                Statki.lost++
+                Statki.endGame(false)
+                Statki.showComputer()
+            }
+            else if (Statki.Player_score == 20) {
+                Statki.won++
+                Statki.endGame(true)
+            }
+        },
+        __clickfooter: function () {
+            bd = document.getElementById("body")
+            bd.classList.toggle("hidden")
+            document.getElementById("dvb").classList.toggle("open")
+        },
+        __playermove: function (e) {
+            if (Statki.isPlayerRound) {
+                var target = e.target
+                let tid = target.getAttribute("id")
+                if (tid[2] == ".") {
+                    x = parseInt(tid[1])
+                    if (tid[4] != null) {
+                        y = tid[3] + tid[4]
+                    }
+                    else {
+                        y = parseInt(tid[3])
+                    }
+                }
+                else {
+                    x = tid[1] + tid[2]
+                    if (tid[5] != null) {
+                        y = tid[4] + tid[5]
+                    }
+                    else {
+                        y = parseInt(tid[4])
+                    }
+                }
+                if (target.classList.length != 0 && target.classList != 'blck') {
+                    alert("Juz tutaj trafiles!")
+                }
+                else {
+                    if (tablice[1][x][y] == 0 && target.classList.length == 0) {
+                        target.classList = ''
+                        target.classList.add('gray')
+                        Statki.isPlayerRound = false
+                        Statki.computer_turns++
+                        Statki.Computermove()
+
+                    }
+                    if (tablice[1][x][y] == 1) {
+                        target.classList = ''
+                        target.classList.add('red')
+                        Statki.Player_score++
+                        Statki.fleetCheck()
+                        if (!Statki.isZacheta && Statki.Player_score != 20) {
+                            Statki.isPlayerRound = false
+                            Statki.Computermove()
+                            Statki.computer_turns++
+                        }
+                    }
+                }
+            } else {
+                alert("Runda komputera")
+            }
+        },
+        __playertabklik: function () {
+            if (Statki.isPlayerRound) {
+                alert("Runda gracza")
+            } else {
+                alert("Runda komputera")
+            }
+        },
+        start: function () {
+            let button = document.getElementById("b1")
+            let dvb = document.getElementById("dvb")
+            if (dvb.classList == "open") { Statki.__clickfooter() }
+            dvb.style.display = "none"
+            button.removeEventListener('click', Statki.start, true)
+            button.style.display = 'none'
+            let tablicaP = document.getElementById("playertab")
+            let tablicaC = document.getElementById("computertab")
+            tablicaP.addEventListener('click', Statki.__playertabklik, true)
+            tablicaC.addEventListener('click', Statki.__playermove, true)
+            tablicaP.style.float = "none"
+            console.log("GAME START")
+        },
+        onready: function () {
+            let tablica = document.getElementById("playertab")
+            tablica.removeEventListener('contextmenu', Statki.__contextmenu, true)
+            tablica.removeEventListener('mouseleave', Statki.__mouseouttab, true)
+            tablica.removeEventListener('mouseover', Statki.__mouseovertab, true)
+            tablica.removeEventListener('click', Statki.__onclicktab, true)
+            //Kod należy do Jana Ślażyńskiego
+            var divstatki = document.getElementById("statki")
+            divstatki.style.display = "none"
+            Statki.rollComputer()
+            let button = document.getElementById("b1")
+            button.style.display = 'block'
+            button.addEventListener('click', Statki.start, true)
+            console.log("GAME READY")
+        },
+        bots: ["Bogiem", "Legendą", "Expertem", "Leszczem"],
+        __onclicktab: function (e) {
+            if (document.getElementsByClassName("red").length == 0) {
+                Statki.__mouseouttab()
+                let blue = document.getElementsByClassName('blue')
+                let bc = blue[0].classList
+                var bcc = 0
+                if (bc[0].length == 1) { bcc = bc[0] }
+                if (bc[1].length == 1) { bcc = bc[1] }
+                bcc = parseInt(bcc)
+                let target = e.target
+                let tid = target.getAttribute("id")
+                let x = tid[1] + tid[2]
+                xx = x - 10
+                let y = tid[4] + tid[5]
+                yy = y - 10
+                if (Statki.zmiennasmierci == 1 && yy + bcc > 11) {
+                    yy = yy - (yy + bcc) % 11
+                    y = yy + 10
+                }
+                if (Statki.zmiennasmierci == 0 && xx + bcc > 11) {
+                    xx = xx - (xx + bcc) % 11
+                    x = xx + 10
+                }
+                for (let i = 1; i <= bcc; i++) {
+                    y = parseInt(y)
+                    x = parseInt(x)
+                    if (Statki.zmiennasmierci == 1) {
+                        c = y + i - 1
+                        var p = document.getElementById("p" + x + "." + c)
+                        tablice[0][xx][yy + i - 1] = 1
+                    }
+                    if (Statki.zmiennasmierci == 0) {
+                        c = x + i - 1
+                        var p = document.getElementById("p" + c + "." + y)
+                        tablice[0][xx + i - 1][yy] = 1
+                    }
+                    p.classList.add("bluetab")
+                    p.classList.add("s" + bcc)
+                }
+                op = Statki.lock.indexOf(blue[0])
+                blue[0].remove()
+                Statki.lock.splice(op, 1)
+                if (Statki.lock[0] == null) {
+                    Statki.onready()
+                } else {
+                    Statki.lock[0].classList.add("blue")
+                }
+            }
+        },
+        __mouseovertab: function (e) {
+            let blue = document.getElementsByClassName('blue')
+            let bc = blue[0].classList
+            var bcc = 0
+            if (bc[0].length == 1) { bcc = bc[0] }
+            if (bc[1].length == 1) { bcc = bc[1] }
+            bcc = parseInt(bcc)
+            let target = e.target
+            let tid = target.getAttribute("id")
+            let x = tid[1] + tid[2]
+            xx = x - 10
+            let y = tid[4] + tid[5]
+            yy = y - 10
+            if (Statki.zmiennasmierci == 1 && yy + bcc > 11) {
+                yy = yy - (yy + bcc) % 11
+                y = yy + 10
+            }
+            if (Statki.zmiennasmierci == 0 && xx + bcc > 11) {
+                xx = xx - (xx + bcc) % 11
+                x = xx + 10
+            }
+            for (let i = 1; i <= bcc; i++) {
+                y = parseInt(y)
+                x = parseInt(x)
+                if (Statki.zmiennasmierci == 1) {
+                    c = y + i - 1
+                    var p = document.getElementById("p" + x + "." + c)
+                }
+                if (Statki.zmiennasmierci == 0) {
+                    c = x + i - 1
+                    var p = document.getElementById("p" + c + "." + y)
+                }
+                if (p != null && Statki.check(xx, yy, bcc, 0, Statki.zmiennasmierci)) {
+                    p.classList.add("green")
+                }
+                if (p != null && Statki.check(xx, yy, bcc, 0, Statki.zmiennasmierci) == false) {
+                    p.classList.add("red")
+                }
+            }
+        },
+        listenery: function () {
+            window.addEventListener("keydown", Statki.__keydown, true)
+            for (statek in Statki.lock) {
+                var blue = document.getElementsByClassName('blue')
+                if (blue[0] == Statki.lock[statek]) {
+                    continue
+                }
+                else {
+                    this.lock[statek].addEventListener('mouseover', Statki.__mouseover, true)
+                    this.lock[statek].addEventListener('mouseout', Statki.__mouseout, true)
+                    this.lock[statek].addEventListener('click', function (e) {
+                        this.removeEventListener('mouseover', Statki.__mouseover, true)
+                        this.removeEventListener('mouseout', Statki.__mouseout, true)
+                        if (blue[0] != undefined) {
+                            blue[0].style.backgroundColor = ''
+                            blue[0].classList.remove('blue')
+                        }
+                        this.classList.add('blue')
+                        this.style.backgroundColor = 'blue'
+                        Statki.listenery()
+                    })
+                }
+            }
+            let tablica = document.getElementById("playertab")
+            tablica.addEventListener('contextmenu', Statki.__contextmenu, true)
+            tablica.addEventListener('mouseleave', Statki.__mouseouttab, true)
+            tablica.addEventListener('mouseover', Statki.__mouseovertab, true)
+            tablica.addEventListener('click', Statki.__onclicktab, true)
+            let dvb = document.getElementById("dvb")
+            dvb.addEventListener("click", Statki.__clickfooter, true)
+        },
+        genHtml: function () {
+            var h1 = document.createElement("h1")
+            h1.innerText = "STATKI"
+            h1.setAttribute("id", "sindragosasflawlessfang")
+            document.body.append(h1)
+            for (let p = 0; p < 2; p++) {
+                var div = document.createElement("div")
+                var divs = document.createElement("div")
+                var h1 = document.createElement("h1")
+                div.appendChild(h1)
+                var table = document.createElement("table")
+                for (let i = 1; i <= map; i++) {
+                    let tr = document.createElement("tr")
+                    for (let x = 1; x <= map; x++) {
+                        let td = document.createElement("td")
+                        if (p == 0) {
+                            td.setAttribute("id", "p" + (10 + i) + "." + (10 + x))
+                            td.classList.add("omegalol")
+                        }
+                        else {
+                            td.setAttribute("id", "c" + i + "." + x)
+                        }
+                        tr.appendChild(td)
+                    }
+                    table.appendChild(tr)
+                }
+                if (p == 0) {
+                    div.setAttribute("id", "player")
+                    h1.setAttribute("id", "ph1")
+                    h1.innerHTML = "Gracz"
+                    divs.setAttribute("id", "statki")
+                    div.appendChild(divs)
+                    table.setAttribute("id", "playertab")
+                }
+                else {
+                    div.setAttribute("id", "computer")
+                    table.setAttribute("id", "computertab")
+                    h1.setAttribute("id", "ch1")
+                    h1.innerHTML = "Komputer"
+                }
+                document.body.appendChild(div)
+                div.appendChild(table)
+            }
+            var div = document.createElement("div")
+            var button = document.createElement("button")
+            button.innerText = "ZACZNIJ"
+            button.setAttribute("id", "b1")
+            div.setAttribute("id", "buttondiv")
+            var button2 = document.createElement("button")
+            button2.innerText = "REWANŻ"
+            button2.setAttribute("id", "b2")
+            var scb = document.createElement("div")
+            div.appendChild(scb)
+            scb.setAttribute('id', "sb")
+            scb.innerHTML = "<p>" + Statki.won + " : " + Statki.lost + "</p>"
+            div.appendChild(button)
+            div.appendChild(button2)
+            button.classList.add("button")
+            button2.classList.add("button")
+            document.body.appendChild(div)
+            var footer = document.createElement("footer")
+            footer.setAttribute("id", "f1")
+            var dvb = document.createElement("div")
+            var divcontent = document.createElement("div")
+            divcontent.setAttribute("id", "body")
+            divcontent.classList.add("hidden")
+            dvb.setAttribute("id", "dvb")
+            dvb.innerText = "Ustawienia"
+            footer.appendChild(dvb)
+            footer.appendChild(divcontent)
+            document.body.appendChild(footer)
+            var ustawienia = ["Zachęta", "Pokaż wynik", "Pokaż przeciwnika [S]"]
+            for (ustawienie in ustawienia) {
+                var d = document.createElement("div")
+                var p = document.createElement("p")
+                var i = document.createElement("input")
+                i.type = "checkbox"
+                i.name = ustawienia[ustawienie]
+                var sb = document.getElementById("sb")
+                if (ustawienie == 0) { i.addEventListener('change', function (e) { if (this.checked) { Statki.isZacheta = true } else { Statki.isZacheta = false } }) }
+                if (ustawienie == 1) { i.addEventListener('change', function (e) { if (this.checked) { sb.style.display = "block" } else { sb.style.display = "none" } }) }
+                if (ustawienie == 2) { i.addEventListener('change', function (e) { if (this.checked) { Statki.enableCheats = true } else { Statki.enableCheats = false } }) }
+                p.innerText = ustawienia[ustawienie]; d.appendChild(p); d.appendChild(i); d.classList.add("controlls"); divcontent.appendChild(d);
+            }
+            var d = document.createElement("div"); var p = document.createElement("p"); var s = document.createElement("select");
+            p.innerHTML = "Poziom trudności"; s.name = "difficulty"; var slct = ["Bóg", "Legenda", "Expert", "Leszcz"]; d.appendChild(p); d.appendChild(s)
+            for (x in slct) { var option = document.createElement("option"); option.value = x; option.innerText = slct[x]; s.appendChild(option); if (x == 3) { option.selected = "selected" } }
+            s.addEventListener("change", function (e) {
+                Statki.difficulty = this.value
+            })
+            divcontent.appendChild(d)
+        },
+        check: function (x, y, masztl, gork, direction) {
+            if (direction == 0) {
+                if (x + masztl > 11) { return false; } for (let i = 0; i <= masztl - 1; i++) {
+                    if (tablice[gork][x + i + 1][y + 1] == 0 && tablice[gork][x + i + 1][y] == 0 && tablice[gork][x + i + 1][y - 1] == 0 && tablice[gork][x + i - 1][y + 1] == 0 && tablice[gork][x + i][y] == 0 && tablice[gork][x + i][y - 1] == 0 && tablice[gork][x + i][y + 1] == 0 && tablice[gork][x + i - 1][y] == 0 && tablice[gork][x + i - 1][y - 1] == 0) {
+                        continue
+                    } else { return false; }
+                } return true;
+            }
+            if (direction == 1) {
+                if (y + masztl > 11) { return false; }
+                for (let i = 0; i <= masztl - 1; i++) {
+                    if (tablice[gork][x + 1][y + i + 1] == 0 && tablice[gork][x + 1][y + i] == 0 && tablice[gork][x + 1][y + i - 1] == 0 && tablice[gork][x - 1][y + i + 1] == 0 && tablice[gork][x][y + i] == 0 && tablice[gork][x][y + i - 1] == 0 && tablice[gork][x][y + i + 1] == 0 && tablice[gork][x - 1][y + i] == 0 && tablice[gork][x - 1][y + i - 1] == 0) {
+                        continue
+                    } else { return false; }
+                } return true;
+            }
+        },
+        rollComputer: function () {
+            tablice = [tablice[0], this.genTab(12)]
+            var checks = document.getElementsByClassName("blck");
+            while (checks.length)
+                checks[0].classList.remove("blck");
+            for (maszt in this.maszty) {
+                let whilie = true
+                while (whilie) {
+                    var losowaX = 1 + Math.floor(Math.random() * 10)
+                    var losowaY = 1 + Math.floor(Math.random() * 10)
+                    var kierunek = Math.round(Math.random())
+                    if (kierunek == 0 && this.check(losowaX, losowaY, this.maszty[maszt], 1, 0)) {
+                        for (let i = 0; i < this.maszty[maszt]; i++) {
+                            tablice[1][losowaX + i][losowaY] = 1
+                        }
+                        whilie = false
+                    }
+                    else if (kierunek == 1 && this.check(losowaX, losowaY, this.maszty[maszt], 1, 1)) {
+                        for (let i = 0; i < this.maszty[maszt]; i++) {
+                            tablice[1][losowaX][losowaY + i] = 1
+                        }
+                        whilie = false
+                    }
+                    else {
+                        continue
+                    }
+                }
+            }
+        },
+        showComputer: function () {
+            for (let i = 1; i <= tablice[1].length - 2; i++) {
+                for (let x = 1; x <= tablice[1].length - 2; x++) {
+                    if (tablice[1][i][x] == 1) { let check = document.getElementById("c" + i + "." + x); if (check.classList == "") { check.classList.add("blck") } } else { continue }
+                }
+            }
+        }
+    }
+    var tablice = Statki.init(12)
+</script>
+
+</html>
